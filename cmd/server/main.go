@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 
+	_ "github.com/fpessoa64/desafio_clean_arch/docs"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest"
 	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest/routes"
@@ -57,6 +59,9 @@ func main() {
 
 	r := chi.NewRouter()
 	routes.RegisterOrderRoutes(r, handler)
+
+	// Swagger docs endpoint
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	log.Println("REST API running on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {

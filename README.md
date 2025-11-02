@@ -56,6 +56,26 @@ docker compose -f docker-compose.dev.yaml up --build
 - `DATABASE_URL=file:orders.db?cache=shared&_foreign_keys=on`
 
 
+
+## Documentação Swagger (REST)
+
+O projeto já inclui geração automática de documentação Swagger para a API REST.
+
+**Como gerar/atualizar a documentação:**
+
+```sh
+swag init -g cmd/server/main.go --parseDependency --parseInternal
+```
+
+**Como acessar a interface Swagger UI:**
+
+- Inicie a aplicação normalmente
+- Acesse: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
+
+Você pode testar e visualizar todos os endpoints REST diretamente pela interface web.
+
+---
+
 ## Endpoints REST (v1)
 
 ```

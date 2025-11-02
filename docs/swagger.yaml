@@ -1,0 +1,66 @@
+definitions:
+  github_com_fpessoa64_desafio_clean_arch_internal_entities.Order:
+    properties:
+      amount:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/order:
+    get:
+      description: Retorna todos os pedidos cadastrados
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_fpessoa64_desafio_clean_arch_internal_entities.Order'
+            type: array
+        "500":
+          description: error listing orders
+          schema:
+            type: string
+      summary: Lista todos os pedidos
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Cria um novo pedido na base de dados
+      parameters:
+      - description: Order
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_fpessoa64_desafio_clean_arch_internal_entities.Order'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_fpessoa64_desafio_clean_arch_internal_entities.Order'
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "500":
+          description: error creating order
+          schema:
+            type: string
+      summary: Cria um novo pedido
+      tags:
+      - orders
+swagger: "2.0"

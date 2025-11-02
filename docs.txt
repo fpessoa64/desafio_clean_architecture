@@ -1,0 +1,271 @@
+Visão geral do que vamos criar
+Banco: PostgreSQL (com Docker).
+Service (aplicação Go) que expõe:
+REST: GET /order (listar) e POST /order (criar — necessário para popular via api.http).
+gRPC: ListOrders service.
+GraphQL: query listOrders.
+Migrações SQL (pasta migrations/).
+api.http com requests para criar e listar orders.
+docker-compose.yaml para levantar DB e app (build da imagem).
+README com instruções e portas.
+Portas sugeridas
+REST (HTTP): 8080
+GraphQL: 8080 (mesma app, rota /graphql)
+gRPC: 50051
+PostgreSQL: 5432
+Observação: REST + GraphQL podem ficar na mesma aplicação HTTP (rotas diferentes); gRPC usa outra porta.
+Estrutura de projeto (sugerida)
+order-clean-arch/
+├─ cmd/
+│  └─ server/
+│     └─ main.go
+├─ internal/
+│  ├─ entities/
+│  │  └─ order.go
+│  ├─ usecase/
+│  │  └─ order_usecase.go
+│  ├─ repository/
+│  │  └─ postgres/
+│  │     └─ order_repository.go
+│  └─ delivery/
+│     ├─ rest/
+│     │  └─ order_handler.go
+│     ├─ grpc/
+│     │  └─ order_grpc.go
+│     └─ graphql/
+│        └─ schema.graphql
+├─ proto/
+│  └─ order.proto
+├─ migrations/
+│  └─ 000001_create_orders_table.up.sql
+│  └─ 000001_create_orders_table.down.sql
+├─ api.http
+├─ go.mod
+├─ Dockerfile
+├─ docker-compose.yaml
+└─ README.md
+1) Entidade (internal/entities/order.go)
+package entities
+
+import "time"
+
+type Order struct {
+    ID           int64     `db:"id" json:"id"`
+    CustomerName string    `db:"customer_name" json:"customer_name"`
+    Amount       float64   `db:"amount" json:"amount"`
+    Status       string    `db:"status" json:"status"`
+    CreatedAt    time.Time `db:"created_at" json:"created_at"`
+}
+2) Migração SQL (migrations/000001_create_orders_table.up.sql)
+-- up
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+(migrations/000001_create_orders_table.down.sql com DROP TABLE IF EXISTS orders;)
+3) Docker Compose + Dockerfile
+docker-compose.yaml
+version: "3.8"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+      POSTGRES_DB: orders_db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./migrations:/migrations
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://order_user:order_pass@db:5432/orders_db?sslmode=disable
+    ports:
+      - "8080:8080"    # REST + GraphQL
+      - "50051:50051"  # gRPC
+    volumes:
+      - ./:/app
+    command: ["./app"] # bin name, ou "go run ./cmd/server" durante dev
+
+volumes:
+  db-data:
+Dockerfile (para a app Go)
+FROM golang:1.21-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app ./cmd/server
+
+FROM alpine:latest
+RUN apk add --no-cache ca-certificates
+COPY --from=build /app /app
+EXPOSE 8080 50051
+ENTRYPOINT ["/app"]
+4) Migrações na inicialização
+Duas opções:
+Rodar migrate manualmente (CLI) antes do app.
+Fazer a aplicação executar migrações automaticamente usando a lib github.com/golang-migrate/migrate/v4 (recomendo) — no main você cria um migrator e aplica Up() ao iniciar.
+Exemplo (pseudo):
+m, err := migrate.New("file://migrations", dbURL)
+if err == nil {
+  _ = m.Up() // tratar erros (already up etc)
+}
+5) Repositório (Postgres) — internal/repository/postgres/order_repository.go
+Use database/sql + sqlx (mais ergonomia):
+type OrderRepository struct {
+    db *sqlx.DB
+}
+
+func (r *OrderRepository) Create(ctx context.Context, o *entities.Order) error {
+    query := `INSERT INTO orders (customer_name, amount, status) VALUES ($1,$2,$3) RETURNING id, created_at`
+    return r.db.QueryRowxContext(ctx, query, o.CustomerName, o.Amount, o.Status).
+       Scan(&o.ID, &o.CreatedAt)
+}
+
+func (r *OrderRepository) List(ctx context.Context, limit, offset int) ([]entities.Order, error) {
+    var list []entities.Order
+    err := r.db.SelectContext(ctx, &list, `SELECT id, customer_name, amount, status, created_at FROM orders ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
+    return list, err
+}
+6) Usecase — internal/usecase/order_usecase.go
+type OrderRepository interface {
+    Create(ctx context.Context, o *entities.Order) error
+    List(ctx context.Context, limit, offset int) ([]entities.Order, error)
+}
+
+type OrderUsecase struct {
+    repo OrderRepository
+}
+
+func (u *OrderUsecase) Create(ctx context.Context, o *entities.Order) error {
+    return u.repo.Create(ctx, o)
+}
+
+func (u *OrderUsecase) List(ctx context.Context, limit, offset int) ([]entities.Order, error) {
+    return u.repo.List(ctx, limit, offset)
+}
+7) REST handler (delivery/rest/order_handler.go)
+Exemplo minimal com chi ou gorilla/mux:
+func (h *Handler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+    var in entities.Order
+    if err := json.NewDecoder(r.Body).Decode(&in); err != nil { http.Error(w, "bad request", 400); return }
+    if err := h.uc.Create(r.Context(), &in); err != nil { http.Error(w, "error", 500); return }
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(in)
+}
+
+func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
+    // parse limit/offset query params
+    orders, _ := h.uc.List(r.Context(), 100, 0)
+    json.NewEncoder(w).Encode(orders)
+}
+Rota:
+GET  /order     -> ListOrders
+POST /order     -> CreateOrder
+8) gRPC (proto/order.proto)
+syntax = "proto3";
+
+package order;
+
+import "google/protobuf/timestamp.proto";
+
+message Order {
+  int64 id = 1;
+  string customer_name = 2;
+  double amount = 3;
+  string status = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message ListOrdersRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+}
+
+service OrderService {
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+}
+Implemente o servidor que usa o OrderUsecase.List e converte para protobuf.
+Gere stubs com protoc + protoc-gen-go + protoc-gen-go-grpc.
+9) GraphQL
+Use gqlgen (recomendo pela maturidade). Schema (internal/delivery/graphql/schema.graphql):
+type Order {
+  id: ID!
+  customerName: String!
+  amount: Float!
+  status: String!
+  createdAt: String!
+}
+
+type Query {
+  listOrders(limit: Int = 100, offset: Int = 0): [Order!]!
+}
+Resolver Query.listOrders chama OrderUsecase.List.
+10) api.http (na raiz) — exemplos para VS Code REST Client
+### Create order
+POST http://localhost:8080/order
+Content-Type: application/json
+
+{
+  "customer_name": "Fernando",
+  "amount": 123.45,
+  "status": "pending"
+}
+
+### List orders
+GET http://localhost:8080/order
+Se preferir GraphQL:
+POST http://localhost:8080/graphql
+Content-Type: application/json
+
+{"query":"{ listOrders { id customerName amount status createdAt } }"}
+11) README (resumo de comandos)
+Exemplo de passos rápidos:
+docker compose up --build
+A aplicação fará a migração automaticamente ao iniciar (se implementado).
+REST/GraphQL em http://localhost:8080
+POST /order — cria order
+GET /order — lista orders
+gRPC em localhost:50051 (OrderService.ListOrders)
+Para rodar local sem Docker: export DATABASE_URL=postgres://order_user:order_pass@localhost:5432/orders_db?sslmode=disable e go run ./cmd/server
+12) Bibliotecas recomendadas
+Router HTTP: chi
+DB: github.com/jmoiron/sqlx
+Migrations: github.com/golang-migrate/migrate/v4
+GraphQL: github.com/99designs/gqlgen
+gRPC: google.golang.org/grpc
+Logging: go.uber.org/zap (opcional)
+Protobuf generator: protoc-gen-go, protoc-gen-go-grpc
+13) Dicas de implementação Clean Architecture
+Dependências apontam para dentro (handlers -> usecase -> repository -> db).
+Interfaces definidas no pacote usecase ou em internal para inversão de dependência (passar implementações concretas no main).
+Mantenha a regra de negócio (usecase) sem dependência de frameworks (http, grpc, db).
+Testes unitários: mock do OrderRepository ao testar OrderUsecase.
+14) Exemplo de main.go (inicialização)
+Conectar DB (sqlx.Connect usando DATABASE_URL).
+Rodar migrações.
+Criar repositório postgres.
+Criar usecase.
+Registrar handlers REST (router), GraphQL (gqlgen handler) e iniciar gRPC server em goroutine.
+Start HTTP server (:8080).
+15) Checklist final (o que entregar)
+Código completo conforme estrutura.
+migrations/ com arquivos .up.sql e .down.sql.
+Dockerfile e docker-compose.yaml.
+proto/order.proto + instruções para gerar stubs.
+api.http com requests de criar/listar (REST e GraphQL).
+README.md com passos para rodar, portas e comandos úteis.
+Tests básicos (opcional, mas recomendado).

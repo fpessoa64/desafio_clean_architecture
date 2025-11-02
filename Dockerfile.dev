@@ -1,4 +1,4 @@
-FROM golang:1.23-bullseye
+FROM golang:1.24-bullseye
 WORKDIR /app
 COPY go.mod go.sum ./
 
@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y gcc libsqlite3-dev curl sqlite3 unzip p
 # Instala plugins Go para protoc
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
 	&& go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN go get -u github.com/swaggo/http-swagger
+
 
 ENV PATH="/usr/local/bin:/app/bin:/go/bin:$PATH"
 #CMD ["go", "run", "./cmd/server"]
