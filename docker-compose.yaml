@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    environment:
+      - DATABASE_URL=file:orders.db?cache=shared&_foreign_keys=on
+    ports:
+      - "8080:8080"    # REST + GraphQL
+      - "50051:50051"  # gRPC
+    volumes:
+      - ./:/app
+    command: ["./app"]

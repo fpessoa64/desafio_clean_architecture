@@ -1,0 +1,21 @@
+FROM golang:1.23-bullseye
+WORKDIR /app
+COPY go.mod go.sum ./
+
+COPY . .
+
+ENV CGO_ENABLED=1
+# Instala dependências do sistema, SQLite, e ferramentas do Protobuf
+RUN apt-get update && apt-get install -y gcc libsqlite3-dev curl sqlite3 unzip protobuf-compiler git
+
+# Instala protoc
+# RUN curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v24.4/protoc-24.4-linux-x86_64.zip \
+# 	&& unzip protoc-24.4-linux-x86_64.zip -d /usr/local \
+# 	&& rm protoc-24.4-linux-x86_64.zip
+	
+# Instala plugins Go para protoc
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
+	&& go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+ENV PATH="/usr/local/bin:/app/bin:/go/bin:$PATH"
+#CMD ["go", "run", "./cmd/server"]
