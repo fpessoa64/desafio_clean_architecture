@@ -10,6 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest"
+	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest/routes"
 	"github.com/fpessoa64/desafio_clean_arch/internal/repository/sqlite"
 	"github.com/fpessoa64/desafio_clean_arch/internal/usecase"
 )
@@ -38,13 +39,12 @@ func init() {
 }
 
 func migrateDB(db *sql.DB) error {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS orders (
-	       id INTEGER PRIMARY KEY AUTOINCREMENT,
-	       name TEXT NOT NULL,
-	       amount REAL NOT NULL DEFAULT 0,
-	       status TEXT NOT NULL DEFAULT 'pending',
-	       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-       )`)
+
+	sqlBytes, err := os.ReadFile("migrations/create_orders_table.up.sql")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(string(sqlBytes))
 	return err
 }
 
@@ -56,8 +56,7 @@ func main() {
 	handler := rest.NewHandler(uc)
 
 	r := chi.NewRouter()
-	r.Post("/order", handler.CreateOrder)
-	r.Get("/order", handler.ListOrders)
+	routes.RegisterOrderRoutes(r, handler)
 
 	log.Println("REST API running on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {

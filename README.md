@@ -55,11 +55,12 @@ docker compose -f docker-compose.dev.yaml up --build
 ## Variáveis de Ambiente
 - `DATABASE_URL=file:orders.db?cache=shared&_foreign_keys=on`
 
-## Endpoints REST (exemplo para VS Code REST Client)
+
+## Endpoints REST (v1)
 
 ```
 ### Criar order
-POST http://localhost:8080/order
+POST http://localhost:8080/v1/order
 Content-Type: application/json
 
 {
@@ -69,8 +70,10 @@ Content-Type: application/json
 }
 
 ### Listar orders
-GET http://localhost:8080/order
+GET http://localhost:8080/v1/order
 ```
+
+Você pode testar facilmente os endpoints REST usando o arquivo `tests/orders.http` no VS Code (com a extensão REST Client).
 
 ## GraphQL
 
