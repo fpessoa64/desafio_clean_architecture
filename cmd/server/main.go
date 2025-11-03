@@ -51,6 +51,8 @@ func main() {
 	restServer := servers.NewRest()
 	go restServer.Start(uc)
 
-	go startServerGraphQL(uc)
+	graphServer := servers.NewGraphQL()
+	go graphServer.Start(uc)
+
 	select {}
 }
