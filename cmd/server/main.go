@@ -19,6 +19,7 @@ import (
 	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest/routes"
 	"github.com/fpessoa64/desafio_clean_arch/internal/repository/sqlite"
 	"github.com/fpessoa64/desafio_clean_arch/internal/usecase"
+	"google.golang.org/grpc/reflection"
 )
 
 func startServerREST(uc *usecase.OrderUsecase) {
@@ -47,6 +48,7 @@ func startServerGrpc(uc *usecase.OrderUsecase) {
 	if grpcPort == "" {
 		grpcPort = "50051"
 	}
+	reflection.Register(grpcServer)
 	log.Printf("gRPC server running on :%s", grpcPort)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve gRPC: %v", err)
