@@ -286,7 +286,7 @@ var File_proto_order_proto protoreflect.FileDescriptor
 
 const file_proto_order_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/order.proto\x12\x05order\"z\n" +
+	"\x11proto/order.proto\x12\x02pb\"z\n" +
 	"\x05Order\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -297,16 +297,16 @@ const file_proto_order_proto_rawDesc = "" +
 	"\x12CreateOrderRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\"9\n" +
-	"\x13CreateOrderResponse\x12\"\n" +
-	"\x05order\x18\x01 \x01(\v2\f.order.OrderR\x05order\"\x13\n" +
-	"\x11ListOrdersRequest\":\n" +
-	"\x12ListOrdersResponse\x12$\n" +
-	"\x06orders\x18\x01 \x03(\v2\f.order.OrderR\x06orders2\x97\x01\n" +
-	"\fOrderService\x12D\n" +
-	"\vCreateOrder\x12\x19.order.CreateOrderRequest\x1a\x1a.order.CreateOrderResponse\x12A\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"6\n" +
+	"\x13CreateOrderResponse\x12\x1f\n" +
+	"\x05order\x18\x01 \x01(\v2\t.pb.OrderR\x05order\"\x13\n" +
+	"\x11ListOrdersRequest\"7\n" +
+	"\x12ListOrdersResponse\x12!\n" +
+	"\x06orders\x18\x01 \x03(\v2\t.pb.OrderR\x06orders2\x8b\x01\n" +
+	"\fOrderService\x12>\n" +
+	"\vCreateOrder\x12\x16.pb.CreateOrderRequest\x1a\x17.pb.CreateOrderResponse\x12;\n" +
 	"\n" +
-	"ListOrders\x12\x18.order.ListOrdersRequest\x1a\x19.order.ListOrdersResponseB7Z5github.com/fpessoa64/desafio_clean_arch/proto;orderpbb\x06proto3"
+	"ListOrders\x12\x15.pb.ListOrdersRequest\x1a\x16.pb.ListOrdersResponseB7Z5github.com/fpessoa64/desafio_clean_arch/proto;orderpbb\x06proto3"
 
 var (
 	file_proto_order_proto_rawDescOnce sync.Once
@@ -322,19 +322,19 @@ func file_proto_order_proto_rawDescGZIP() []byte {
 
 var file_proto_order_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_order_proto_goTypes = []any{
-	(*Order)(nil),               // 0: order.Order
-	(*CreateOrderRequest)(nil),  // 1: order.CreateOrderRequest
-	(*CreateOrderResponse)(nil), // 2: order.CreateOrderResponse
-	(*ListOrdersRequest)(nil),   // 3: order.ListOrdersRequest
-	(*ListOrdersResponse)(nil),  // 4: order.ListOrdersResponse
+	(*Order)(nil),               // 0: pb.Order
+	(*CreateOrderRequest)(nil),  // 1: pb.CreateOrderRequest
+	(*CreateOrderResponse)(nil), // 2: pb.CreateOrderResponse
+	(*ListOrdersRequest)(nil),   // 3: pb.ListOrdersRequest
+	(*ListOrdersResponse)(nil),  // 4: pb.ListOrdersResponse
 }
 var file_proto_order_proto_depIdxs = []int32{
-	0, // 0: order.CreateOrderResponse.order:type_name -> order.Order
-	0, // 1: order.ListOrdersResponse.orders:type_name -> order.Order
-	1, // 2: order.OrderService.CreateOrder:input_type -> order.CreateOrderRequest
-	3, // 3: order.OrderService.ListOrders:input_type -> order.ListOrdersRequest
-	2, // 4: order.OrderService.CreateOrder:output_type -> order.CreateOrderResponse
-	4, // 5: order.OrderService.ListOrders:output_type -> order.ListOrdersResponse
+	0, // 0: pb.CreateOrderResponse.order:type_name -> pb.Order
+	0, // 1: pb.ListOrdersResponse.orders:type_name -> pb.Order
+	1, // 2: pb.OrderService.CreateOrder:input_type -> pb.CreateOrderRequest
+	3, // 3: pb.OrderService.ListOrders:input_type -> pb.ListOrdersRequest
+	2, // 4: pb.OrderService.CreateOrder:output_type -> pb.CreateOrderResponse
+	4, // 5: pb.OrderService.ListOrders:output_type -> pb.ListOrdersResponse
 	4, // [4:6] is the sub-list for method output_type
 	2, // [2:4] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

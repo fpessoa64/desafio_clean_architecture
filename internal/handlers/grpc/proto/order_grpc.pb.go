@@ -8,7 +8,6 @@ package orderpb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_CreateOrder_FullMethodName = "/order.OrderService/CreateOrder"
-	OrderService_ListOrders_FullMethodName  = "/order.OrderService/ListOrders"
+	OrderService_CreateOrder_FullMethodName = "/pb.OrderService/CreateOrder"
+	OrderService_ListOrders_FullMethodName  = "/pb.OrderService/ListOrders"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -143,7 +142,7 @@ func _OrderService_ListOrders_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var OrderService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "order.OrderService",
+	ServiceName: "pb.OrderService",
 	HandlerType: (*OrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
