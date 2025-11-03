@@ -104,10 +104,46 @@ Content-Type: application/json
 {"query":"{ listOrders { id customerName amount status createdAt } }"}
 ```
 
+
 ## gRPC
-- Porta: 50051
-- Service: `OrderService.ListOrders`
-- Proto: veja `proto/order.proto`
+
+### Testando com Evans (CLI gRPC)
+
+Você pode testar o serviço gRPC facilmente usando o Evans:
+
+1. Certifique-se de que o servidor está rodando e a porta gRPC está exposta (padrão: 50051).
+2. No terminal, execute:
+
+```sh
+evans -r repl --proto proto/order.proto --host localhost --port 50051
+```
+
+3. No prompt do Evans, selecione o package e o serviço:
+
+```
+package order
+service OrderService
+```
+
+4. Para listar pedidos:
+
+```
+call ListOrders
+```
+
+5. Para criar um pedido:
+
+```
+call CreateOrder
+```
+Preencha os campos conforme solicitado, por exemplo:
+```
+name (TYPE_STRING) => Fernando
+amount (TYPE_DOUBLE) => 123.45
+status (TYPE_STRING) => pending
+```
+
+Veja o arquivo `proto/order.proto` para detalhes dos campos.
 
 ## Migrações
 - Migrações SQL em `migrations/`
