@@ -3,56 +3,18 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net"
-	"net/http"
 	"os"
 
 	_ "github.com/fpessoa64/desafio_clean_arch/docs"
-	"github.com/go-chi/chi/v5"
 	_ "github.com/mattn/go-sqlite3"
-	httpSwagger "github.com/swaggo/http-swagger"
-	"google.golang.org/grpc"
 
-	orderpb "github.com/fpessoa64/desafio_clean_arch/internal/handlers/grpc/proto"
-	grpcorder "github.com/fpessoa64/desafio_clean_arch/internal/handlers/grpc/proto/service"
-	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest"
-	"github.com/fpessoa64/desafio_clean_arch/internal/handlers/rest/routes"
 	"github.com/fpessoa64/desafio_clean_arch/internal/repository/sqlite"
+	"github.com/fpessoa64/desafio_clean_arch/internal/servers"
 	"github.com/fpessoa64/desafio_clean_arch/internal/usecase"
-	"google.golang.org/grpc/reflection"
 )
 
-func startServerREST(uc *usecase.OrderUsecase) {
-	handler := rest.NewHandler(uc)
-	r := chi.NewRouter()
-	routes.RegisterOrderRoutes(r, handler)
-	r.Get("/swagger/*", httpSwagger.WrapHandler)
-	restPort := os.Getenv("REST_PORT")
-	if restPort == "" {
-		restPort = "8080"
-	}
-	log.Printf("REST API running on :%s", restPort)
-	if err := http.ListenAndServe(":"+restPort, r); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func startServerGrpc(uc *usecase.OrderUsecase) {
-	lis, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	grpcServer := grpc.NewServer()
-	orderpb.RegisterOrderServiceServer(grpcServer, grpcorder.NewOrderServiceServer(uc))
-	grpcPort := os.Getenv("GRPC_PORT")
-	if grpcPort == "" {
-		grpcPort = "50051"
-	}
-	reflection.Register(grpcServer)
-	log.Printf("gRPC server running on :%s", grpcPort)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve gRPC: %v", err)
-	}
+func startServerGraphQL(uc *usecase.OrderUsecase) {
+	// Implementação do servidor GraphQL aqui
 }
 
 var db *sql.DB
@@ -83,7 +45,12 @@ func main() {
 	repo := sqlite.NewOrderRepositorySqlite(db)
 	uc := usecase.NewOrderUsecase(repo)
 
-	go startServerGrpc(uc)
-	go startServerREST(uc)
+	grpcServer := servers.NewGrpc()
+	go grpcServer.Start(uc)
+
+	restServer := servers.NewRest()
+	go restServer.Start(uc)
+
+	go startServerGraphQL(uc)
 	select {}
 }
