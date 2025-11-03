@@ -84,34 +84,6 @@ func main() {
 	uc := usecase.NewOrderUsecase(repo)
 
 	go startServerGrpc(uc)
-	startServerREST(uc)
+	go startServerREST(uc)
+	select {}
 }
-
-// 	repo := sqlite.NewOrderRepositorySqlite(db)
-// 	uc := usecase.NewOrderUsecase(repo)
-// 	handler := rest.NewHandler(uc)
-
-// 	r := chi.NewRouter()
-// 	routes.RegisterOrderRoutes(r, handler)
-
-// 	// Swagger docs endpoint
-// 	r.Get("/swagger/*", httpSwagger.WrapHandler)
-
-// 	// gRPC server
-// 	go func() {
-// 		lis, err := net.Listen("tcp", ":50051")
-// 		if err != nil {
-// 			log.Fatalf("failed to listen: %v", err)
-// 		}
-// 		grpcServer := grpc.NewServer()
-// 		orderpb.RegisterOrderServiceServer(grpcServer, grpcorder.NewOrderServiceServer(uc))
-// 		log.Println("gRPC server running on :50051")
-// 		if err := grpcServer.Serve(lis); err != nil {
-// 			log.Fatalf("failed to serve gRPC: %v", err)
-// 		}
-// 	}()
-// 	log.Println("REST API running on :8080")
-// 	if err := http.ListenAndServe(":8080", r); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }
